@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {},
+  "extends": "expo/tsconfig.base",
+  "expo": {
+    "scheme": "com.virginia.collegemarketplace" // This is the scheme for the app
+  }
+}
