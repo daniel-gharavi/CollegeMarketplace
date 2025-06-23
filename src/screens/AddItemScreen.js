@@ -208,6 +208,7 @@ export default function AddItemScreen({ navigation }) {
             mode={category === cat.value ? 'contained' : 'outlined'}
             onPress={() => setCategory(cat.value)}
             style={styles.categoryButton}
+            contentStyle={styles.buttonContent}
             compact
           >
             {cat.label}
@@ -224,6 +225,7 @@ export default function AddItemScreen({ navigation }) {
             mode={condition === cond.value ? 'contained' : 'outlined'}
             onPress={() => setCondition(cond.value)}
             style={styles.categoryButton}
+            contentStyle={styles.buttonContent}
             compact
           >
             {cond.label}
@@ -298,12 +300,16 @@ const styles = StyleSheet.create({
   buttonGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 4,
     marginBottom: 16,
   },
   categoryButton: {
-    marginBottom: 8,
-    marginRight: 8,
+    marginBottom: 4,
+    marginRight: 4,
+  },
+  buttonContent: {
+    paddingHorizontal: 12,
+    // paddingVertical: 4,
   },
   submitButton: {
     marginTop: 24,
