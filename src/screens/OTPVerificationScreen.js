@@ -32,23 +32,10 @@ export default function OTPVerificationScreen({ route, navigation }) {
     } else {
       // Add a brief delay for better UX to show success state
       await new Promise(resolve => setTimeout(resolve, 1000));
-      // Get current user ID from Supabase Auth
-      const { data: { user } } = await supabase.auth.getUser();
-      // Fetch user's first name from profile using user id
-      let firstName = '';
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name')
-          .eq('id', user.id)
-          .single();
-        firstName = profile?.first_name || '';
-      }
       setLoading(false);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Home', params: { firstName } }],
-      });
+      // Navigation will be handled automatically by the auth state change listener
+      // in AppNavigator, so we don't need to manually navigate here
+      console.log('Email verification successful, auth state will handle navigation');
     }
   };
 
