@@ -23,16 +23,9 @@ export default function LoginScreen({ navigation }) {
     } else if (data?.user?.confirmed_at === null) {
       setError('Please confirm your email before logging in.');
     } else {
-      let firstName = '';
-      if (data?.user?.id) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name')
-          .eq('id', data.user.id)
-          .single();
-        firstName = profile?.first_name || '';
-      }
-      navigation.replace('Home', { firstName });
+      // Navigation will be handled automatically by the auth state change listener
+      // in AppNavigator, so we don't need to manually navigate here
+      console.log('Login successful, auth state will handle navigation');
     }
   };
 
