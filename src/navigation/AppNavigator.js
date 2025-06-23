@@ -10,14 +10,38 @@ import OTPVerificationScreen from '../screens/OTPVerificationScreen';
 
 const Stack = createStackNavigator();
 
+// 🚨 TESTING MODE CONFIGURATION 🚨
+// FOR PRODUCTION: Change TESTING_MODE to false
+// FOR TESTING: Change TESTING_MODE to true
+const TESTING_MODE = true;
+const TEST_USER_ID = '7e56eb93-c1e1-4bf6-b48f-7e5efe56f5b0';
+
+// ✅ Easy Production Switch:
+// 1. Set TESTING_MODE = false
+// 2. That's it! App will start with Login screen
+
 export default function AppNavigator() {
+  const initialRouteName = TESTING_MODE ? "Home" : "Login";
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
+      <Stack.Navigator 
+        initialRouteName={initialRouteName}
+        screenOptions={{
+          headerTitleStyle: {
+            fontSize: 18,
+          },
+          headerStyle: {
+            elevation: 4,
+            shadowOpacity: 0.2,
+          }
+        }}
+      >
         <Stack.Screen 
           name="Home" 
           component={HomeScreen} 
-          options={{ title: 'Marketplace' }} 
+          options={{ title: 'Marketplace' }}
+          initialParams={TESTING_MODE ? { firstName: 'Test User', userId: TEST_USER_ID } : undefined}
         />
         <Stack.Screen 
           name="Detail" 
