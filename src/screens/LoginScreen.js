@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Text, useTheme } from 'react-native-paper';
 import { supabase } from '../../utils/supabase';
 
@@ -60,52 +60,77 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <TextInput
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        style={styles.input}
-      />
-      <TextInput
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-      />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {resetMessage ? <Text style={styles.success}>{resetMessage}</Text> : null}
-      <Button
-        mode="contained"
-        onPress={handleLogin}
-        loading={loading}
-        style={styles.button}
-        disabled={!email || !password || loading}
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        Login
-      </Button>
-      <TouchableOpacity 
-        onPress={handleResetPassword} 
-        style={styles.resetContainer}
-        disabled={resetLoading}
-      >
-        <Text style={[styles.resetLink, resetLoading && styles.disabledLink]}>
-          {resetLoading ? 'Sending...' : 'Forgot Password?'}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Signup')} style={styles.linkContainer}>
-        <Text style={styles.link}>Don't have an account? Sign up</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.content}>
+          <Text style={styles.title}>Login</Text>
+          <TextInput
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={styles.input}
+          />
+          <TextInput
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            style={styles.input}
+          />
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {resetMessage ? <Text style={styles.success}>{resetMessage}</Text> : null}
+          <Button
+            mode="contained"
+            onPress={handleLogin}
+            loading={loading}
+            style={styles.button}
+            disabled={!email || !password || loading}
+          >
+            Login
+          </Button>
+          <TouchableOpacity 
+            onPress={handleResetPassword} 
+            style={styles.resetContainer}
+            disabled={resetLoading}
+          >
+            <Text style={[styles.resetLink, resetLoading && styles.disabledLink]}>
+              {resetLoading ? 'Sending...' : 'Forgot Password?'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Signup')} style={styles.linkContainer}>
+            <Text style={styles.link}>Don't have an account? Sign up</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff' 
+  },
+  scrollContainer: { 
+    flexGrow: 1, 
+    justifyContent: 'center',
+    padding: 24,
+    minHeight: '100%'
+  },
+  content: {
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center'
+  },
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 32, alignSelf: 'center' },
   input: { marginBottom: 16 },
   button: { marginTop: 8 },
