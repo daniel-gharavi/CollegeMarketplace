@@ -8,6 +8,7 @@ export default function SignupScreen({ navigation }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -92,6 +93,7 @@ export default function SignupScreen({ navigation }) {
                 first_name: firstName.trim(),
                 last_name: lastName.trim(),
                 email: email.toLowerCase(),
+                phone_number: phoneNumber,
                 created_at: new Date().toISOString(),
               }
             ]);
@@ -134,6 +136,10 @@ export default function SignupScreen({ navigation }) {
     }
     if (!email.trim()) {
       setError('Email is required.');
+      return false;
+    }
+    if (!phoneNumber.trim()) {
+      setError('Phone number is required.');
       return false;
     }
     if (!password.trim()) {
@@ -185,6 +191,13 @@ export default function SignupScreen({ navigation }) {
           style={styles.input}
         />
         <TextInput
+          label="Phone Number"
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          keyboardType="phone-pad"
+          style={styles.input}
+        />
+        <TextInput
           label="Password"
           value={password}
           onChangeText={setPassword}
@@ -204,7 +217,7 @@ export default function SignupScreen({ navigation }) {
           onPress={handleSignup}
           loading={loading}
           style={styles.button}
-          disabled={!firstName || !lastName || !email || !password || !confirmPassword || loading}
+          disabled={!firstName || !lastName || !email || !phoneNumber || !password || !confirmPassword || loading}
         >
           Sign Up
         </Button>
