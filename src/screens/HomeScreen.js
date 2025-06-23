@@ -14,9 +14,10 @@ const dummyData = [
   { id: '4', title: 'Desk Chair', price: '$45', image: null },
 ];
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
   const [search, setSearch] = useState('');
   const [items, setItems] = useState(dummyData);
+  const firstName = route?.params?.firstName;
 
   const onSearchChange = query => {
     setSearch(query);
@@ -29,6 +30,13 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.welcomeTitle}>
+          {firstName ? `Welcome, ${firstName}!` : 'Welcome to College Marketplace'}
+        </Text>
+        <Text style={styles.welcomeSubtitle}>Find great deals from fellow students</Text>
+      </View>
+      
       <Searchbar
         placeholder="Search"
         onChangeText={onSearchChange}
@@ -96,5 +104,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     bottom: 16,
+  },
+  header: {
+    padding: 16,
+  },
+  welcomeTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  welcomeSubtitle: {
+    fontSize: 14,
+    color: '#666',
   },
 });
