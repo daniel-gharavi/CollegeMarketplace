@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import AppNavigator from './src/navigation/AppNavigator';
 import { theme } from './src/theme';
+import { UserProvider } from './contexts/UserContext';
 
 export default function App() {
   const navigationTheme = {
@@ -18,13 +19,15 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PaperProvider theme={theme}>
-        <BottomSheetModalProvider>
-          <NavigationContainer theme={navigationTheme}>
-            <AppNavigator />
-          </NavigationContainer>
-        </BottomSheetModalProvider>
-      </PaperProvider>
+      <UserProvider>
+        <PaperProvider theme={theme}>
+          <BottomSheetModalProvider>
+            <NavigationContainer theme={navigationTheme}>
+              <AppNavigator />
+            </NavigationContainer>
+          </BottomSheetModalProvider>
+        </PaperProvider>
+      </UserProvider>
     </GestureHandlerRootView>
   );
 }
