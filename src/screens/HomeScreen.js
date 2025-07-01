@@ -4,7 +4,7 @@ import { Searchbar, Card, FAB, Text, ActivityIndicator, IconButton, Divider, Tit
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getMarketplaceItems } from '../../utils/marketplaceService';
-import { supabase } from '../../utils/supabase';
+import { useUser } from '../../contexts/UserContext';
 import { useFocusEffect } from '@react-navigation/native';
 
 const numCols = 2;
@@ -24,20 +24,37 @@ const categories = [
 export default function HomeScreen({ navigation }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { logout } = useUser();
   const [allItems, setAllItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [menuAnimating, setMenuAnimating] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => <Title style={styles.headerTitle}>HooMart</Title>,
-      headerRight: () => <IconButton icon="dots-vertical" iconColor={theme.colors.text} size={24} onPress={() => setMenuVisible(true)} />,
+      headerRight: () => (
+        <View style={styles.headerButtons}>
+          <IconButton 
+            icon="chat" 
+            iconColor={theme.colors.text} 
+            size={24} 
+            onPress={() => navigation.navigate('ChatList')} 
+          />
+          <IconButton 
+            icon="dots-vertical" 
+            iconColor={theme.colors.text} 
+            size={24} 
+            onPress={() => setMenuVisible(!menuVisible)} 
+          />
+        </View>
+      ),
     });
-  }, [navigation, theme]);
+  }, [navigation, theme, menuVisible]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -46,7 +63,24 @@ export default function HomeScreen({ navigation }) {
   );
 
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: menuVisible ? 1 : 0, duration: 200, useNativeDriver: true }).start();
+    if (menuVisible) {
+      setMenuAnimating(true);
+      Animated.timing(fadeAnim, { 
+        toValue: 1, 
+        duration: 200, 
+        useNativeDriver: true 
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, { 
+        toValue: 0, 
+        duration: 200, 
+        useNativeDriver: true 
+      }).start((finished) => {
+        if (finished) {
+          setMenuAnimating(false);
+        }
+      });
+    }
   }, [menuVisible]);
 
   const loadItems = async () => {
@@ -58,7 +92,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await logout();
   };
 
   const handleCategorySelect = (categoryValue) => {
@@ -92,23 +126,31 @@ export default function HomeScreen({ navigation }) {
     </TouchableOpacity>
   );
 
+  const closeMenu = () => {
+    setMenuVisible(false);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {menuVisible && (
+      {(menuVisible || menuAnimating) && (
         <>
-          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setMenuVisible(false)} />
-          <Animated.View style={[styles.dropdown, { opacity: fadeAnim }]}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); navigation.navigate('Profile'); }}>
+          <TouchableOpacity 
+            style={[styles.overlay, { zIndex: 999 }]} 
+            activeOpacity={1}
+            onPress={closeMenu} 
+          />
+          <Animated.View style={[styles.dropdown, { opacity: fadeAnim, zIndex: 1000 }]}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); navigation.navigate('Profile'); }}>
               <Icon name="person" size={20} color="#333" />
               <Text style={styles.menuText}>My Profile</Text>
             </TouchableOpacity>
             <Divider />
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); navigation.navigate('Settings'); }}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); navigation.navigate('Settings'); }}>
               <Icon name="settings" size={20} color="#333" />
               <Text style={styles.menuText}>Settings</Text>
             </TouchableOpacity>
             <Divider />
-            <TouchableOpacity style={styles.menuItem} onPress={handleSignOut}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => { closeMenu(); handleSignOut(); }}>
                 <Icon name="logout" size={20} color="#333" />
                 <Text style={styles.menuText}>Sign Out</Text>
             </TouchableOpacity>
@@ -205,7 +247,30 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   fab: { position: 'absolute', right: 20, bottom: 20 },
-  dropdown: { position: 'absolute', top: 5, right: 5, backgroundColor: 'white', borderRadius: 8, paddingVertical: 4, width: 180, elevation: 8, zIndex: 1000 },
+  overlay: {
+    position: 'absolute',
+    top: -100,
+    left: 0,
+    right: 0,
+    bottom: -100,
+    width: '100%',
+    height: Dimensions.get('screen').height + 200,
+  },
+  dropdown: { 
+    position: 'absolute', 
+    top: 5, 
+    right: 5, 
+    backgroundColor: 'white', 
+    borderRadius: 8, 
+    paddingVertical: 4, 
+    width: 180, 
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
   menuItem: { paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center' },
   menuText: { fontSize: 16, color: '#000', marginLeft: 16, fontFamily: 'Inter-Regular' },
+  headerButtons: { flexDirection: 'row', alignItems: 'center' },
 });
