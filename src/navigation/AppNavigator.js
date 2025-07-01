@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 import { ActivityIndicator, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import HomeScreen from '../screens/HomeScreen';
 import ItemDetailScreen from '../screens/ItemDetailScreen';
 import AddItemScreen from '../screens/AddItemScreen';
@@ -10,30 +11,63 @@ import OTPVerificationScreen from '../screens/OTPVerificationScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import EditItemScreen from '../screens/EditItemScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import { supabase } from '../../utils/supabase';
+import ChatScreen from '../screens/ChatScreen';
+import ChatListScreen from '../screens/ChatListScreen';
+import { useUser } from '../../contexts/UserContext';
 import { useTheme } from 'react-native-paper';
+import { 
+  initializeNotifications, 
+  setupNotificationListeners, 
+  removeNotificationListeners 
+} from '../../utils/notificationService';
 
 const Stack = createStackNavigator();
 
-export default function AppNavigator() {
+function AppNavigatorContent() {
   const theme = useTheme();
-  const [isLoading, setIsLoading] = useState(true);
-  const [session, setSession] = useState(null);
+  const navigation = useNavigation();
+  const { user, loading } = useUser();
+  const [notificationListeners, setNotificationListeners] = useState(null);
 
+  // Initialize notifications when user is authenticated
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setIsLoading(false);
-    });
+    if (user) {
+      initializeNotificationsForUser();
+    } else {
+      cleanupNotifications();
+    }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    return () => {
+      cleanupNotifications();
+    };
+  }, [user]);
 
-    return () => subscription.unsubscribe();
-  }, []);
+  const initializeNotificationsForUser = async () => {
+    try {
+      // Initialize push notifications
+      const result = await initializeNotifications();
+      if (result.success) {
+        console.log('Notifications initialized successfully');
+        
+        // Set up notification listeners
+        const listeners = setupNotificationListeners(navigation);
+        setNotificationListeners(listeners);
+      } else {
+        console.log('Failed to initialize notifications:', result.error);
+      }
+    } catch (error) {
+      console.error('Error initializing notifications:', error);
+    }
+  };
 
-  if (isLoading) {
+  const cleanupNotifications = () => {
+    if (notificationListeners) {
+      removeNotificationListeners(notificationListeners);
+      setNotificationListeners(null);
+    }
+  };
+
+  if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -55,9 +89,11 @@ export default function AppNavigator() {
         },
       }}
     >
-      {session && session.user ? (
+      {user ? (
          <>
           <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="ChatList" component={ChatListScreen} options={{ title: 'Messages' }} />
+          <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Chat' }} />
           <Stack.Screen name="Detail" component={ItemDetailScreen} />
           <Stack.Screen name="Add" component={AddItemScreen} options={{ title: 'Add Item' }} />
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'My Profile' }} />
@@ -73,4 +109,8 @@ export default function AppNavigator() {
       )}
     </Stack.Navigator>
   );
+}
+
+export default function AppNavigator() {
+  return <AppNavigatorContent />;
 }

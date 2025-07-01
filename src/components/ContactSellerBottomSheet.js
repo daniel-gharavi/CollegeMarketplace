@@ -3,10 +3,12 @@ import { View, StyleSheet, Linking, Alert } from 'react-native';
 import { Text, Button, IconButton } from 'react-native-paper';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
-const ContactSellerBottomSheet = ({ visible, onClose, seller }) => {
+const ContactSellerBottomSheet = ({ visible, onClose, seller, item }) => {
   const bottomSheetRef = useRef(null);
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   // Variables
   const snapPoints = useMemo(() => ['1%', '60%'], []);
@@ -80,6 +82,15 @@ const ContactSellerBottomSheet = ({ visible, onClose, seller }) => {
     }
   };
 
+  const handleChatPress = () => {
+    if (!seller) {
+      Alert.alert('Error', 'No seller information available');
+      return;
+    }
+    navigation.navigate('Chat', { seller, item });
+    onClose();
+  };
+
   console.log('Rendering ContactSellerBottomSheet with visible:', visible);
 
   return (
@@ -133,6 +144,17 @@ const ContactSellerBottomSheet = ({ visible, onClose, seller }) => {
             compact={false}
           >
             Call
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={handleChatPress}
+            style={styles.button}
+            labelStyle={[styles.buttonText, { flexShrink: 0 }]}
+            contentStyle={styles.buttonContent}
+            icon="chat"
+            compact={false}
+          >
+            Chat
           </Button>
         </View>
 
