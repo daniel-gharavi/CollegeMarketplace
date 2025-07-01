@@ -1,347 +1,165 @@
-// src/screens/AddItemScreen.js
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Image } from 'react-native';
-import { TextInput, Button, Text, IconButton } from 'react-native-paper';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { TextInput, Button, Text, useTheme, Chip } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { pickImage, uploadImage } from '../../utils/imageService';
 import { createMarketplaceItem } from '../../utils/marketplaceService';
-import { pickImage, uploadImage, testStorageAccess } from '../../utils/imageService';
 
 const categories = [
-  { value: 'textbooks', label: 'Textbooks' },
-  { value: 'electronics', label: 'Electronics' },
-  { value: 'furniture', label: 'Furniture' },
-  { value: 'clothing', label: 'Clothing' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'other', label: 'Other' },
-];
-
-const conditions = [
-  { value: 'new', label: 'New' },
-  { value: 'like_new', label: 'Like New' },
-  { value: 'good', label: 'Good' },
-  { value: 'fair', label: 'Fair' },
-  { value: 'poor', label: 'Poor' },
+  { label: 'Textbooks', value: 'textbooks' },
+  { label: 'Electronics', value: 'electronics' },
+  { label: 'Furniture', value: 'furniture' },
+  { label: 'Clothing', value: 'clothing' },
+  { label: 'Sports', value: 'sports' },
+  { label: 'Other', value: 'other' },
 ];
 
 export default function AddItemScreen({ navigation }) {
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [condition, setCondition] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [errors, setErrors] = useState({});
-  const insets = useSafeAreaInsets();
-
-  // Test storage access when component mounts
-  useEffect(() => {
-    testStorageAccess();
-  }, []);
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!title.trim()) {
-      newErrors.title = 'Title is required';
-    }
-
-    if (!price.trim()) {
-      newErrors.price = 'Price is required';
-    } else if (isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
-      newErrors.price = 'Please enter a valid price';
-    }
-
-    if (!category) {
-      newErrors.category = 'Category is required';
-    }
-
-    if (!condition) {
-      newErrors.condition = 'Condition is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handlePickImage = async () => {
-    try {
-      setImageUploading(true);
-      const { uri, error } = await pickImage();
-      
-      if (error) {
-        Alert.alert('Error', 'Failed to pick image. Please try again.');
-        return;
-      }
-      
-      if (uri) {
-        setSelectedImage(uri);
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-      console.error('Error picking image:', err);
-    } finally {
-      setImageUploading(false);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setSelectedImage(null);
+    const { uri, error } = await pickImage();
+    if (error) Alert.alert('Error', 'Failed to pick image.');
+    else if (uri) setSelectedImage(uri);
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!title || !price || !category) {
+      Alert.alert('Missing Information', 'Please fill out title, price, and select a category.');
+      return;
+    }
 
     setLoading(true);
-    try {
-      let imageUrl = null;
+    let imageUrl = null;
 
-      // Upload image if selected
+    try {
       if (selectedImage) {
-        const { url, error } = await uploadImage(selectedImage);
-        if (error) {
-          console.error('Image upload error details:', error);
-          Alert.alert(
-            'Image Upload Failed', 
-            `Failed to upload image: ${error.message || 'Unknown error'}. Please try again or continue without an image.`,
-            [
-              { text: 'Try Again', style: 'cancel' },
-              { 
-                text: 'Continue Without Image', 
-                onPress: () => {
-                  // Continue without image
-                  submitWithoutImage();
-                }
-              }
-            ]
-          );
-          setLoading(false);
-          return;
-        }
+        const { url, error: uploadError } = await uploadImage(selectedImage);
+        if (uploadError) throw new Error('Image upload failed: ' + uploadError.message);
         imageUrl = url;
       }
 
-      await submitWithData(imageUrl);
+      const itemData = {
+        title: title.trim(),
+        description: description.trim(),
+        price: parseFloat(price),
+        category: category,
+        condition: 'good',
+        image_url: imageUrl,
+      };
+
+      const { error: createError } = await createMarketplaceItem(itemData);
+      if (createError) throw new Error('Failed to create item: ' + createError.message);
+
+      Alert.alert('Success', 'Item posted successfully!', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+
     } catch (err) {
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-      console.error('Error creating item:', err);
+      Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const submitWithoutImage = async () => {
-    await submitWithData(null);
-  };
-
-  const submitWithData = async (imageUrl) => {
-    try {
-      const itemData = {
-        title: title.trim(),
-        description: description.trim(),
-        price: parseFloat(price),
-        category,
-        condition,
-        image_url: imageUrl,
-      };
-
-      const { data, error } = await createMarketplaceItem(itemData);
-
-      if (error) {
-        Alert.alert('Error', 'Failed to create item. Please try again.');
-        console.error('Error creating item:', error);
-      } else {
-        Alert.alert('Success', 'Item posted successfully!', [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]);
-      }
-    } catch (err) {
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-      console.error('Error creating item:', err);
-    }
-  };
-
   return (
-    <ScrollView 
-      style={styles.container} 
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 16 }]}
-    >
-      <Text style={styles.title}>Add New Item</Text>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.label}>Title</Text>
+        <TextInput mode="outlined" value={title} onChangeText={setTitle} outlineColor={theme.colors.surface} activeOutlineColor={theme.colors.primary} style={{marginBottom: 20}} />
 
-      <TextInput
-        label="Title *"
-        value={title}
-        onChangeText={setTitle}
-        style={styles.input}
-        error={!!errors.title}
-      />
-      {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+        <Text style={styles.label}>Price</Text>
+        <TextInput mode="outlined" value={price} onChangeText={setPrice} keyboardType="numeric" outlineColor={theme.colors.surface} activeOutlineColor={theme.colors.primary} style={{marginBottom: 20}} />
+        
+        <Text style={styles.label}>Description</Text>
+        <TextInput mode="outlined" value={description} onChangeText={setDescription} multiline numberOfLines={4} outlineColor={theme.colors.surface} activeOutlineColor={theme.colors.primary} style={{marginBottom: 20}} />
+        
+        <Text style={styles.label}>Category</Text>
+        <View style={styles.categoryContainer}>
+          {categories.map((cat) => (
+            <Chip
+              key={cat.value}
+              onPress={() => setCategory(cat.value)}
+              style={[styles.chip, category === cat.value && { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary }]}
+              textStyle={{color: category === cat.value ? '#FFF' : theme.colors.placeholder }}
+            >
+              {cat.label}
+            </Chip>
+          ))}
+        </View>
 
-      <TextInput
-        label="Description"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={4}
-        style={styles.input}
-      />
-
-      <TextInput
-        label="Price ($) *"
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="decimal-pad"
-        style={styles.input}
-        error={!!errors.price}
-      />
-      {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
-
-      <Text style={styles.sectionTitle}>Category *</Text>
-      <View style={styles.buttonGrid}>
-        {categories.map((cat) => (
-          <Button
-            key={cat.value}
-            mode={category === cat.value ? 'contained' : 'outlined'}
-            onPress={() => setCategory(cat.value)}
-            style={styles.categoryButton}
-            contentStyle={styles.buttonContent}
-            compact
-          >
-            {cat.label}
-          </Button>
-        ))}
-      </View>
-      {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
-
-      <Text style={styles.sectionTitle}>Condition *</Text>
-      <View style={styles.buttonGrid}>
-        {conditions.map((cond) => (
-          <Button
-            key={cond.value}
-            mode={condition === cond.value ? 'contained' : 'outlined'}
-            onPress={() => setCondition(cond.value)}
-            style={styles.categoryButton}
-            contentStyle={styles.buttonContent}
-            compact
-          >
-            {cond.label}
-          </Button>
-        ))}
-      </View>
-      {errors.condition && <Text style={styles.errorText}>{errors.condition}</Text>}
-
-      <Text style={styles.sectionTitle}>Photo</Text>
-      <View style={styles.imageSection}>
-        {selectedImage ? (
-          <View style={styles.imageContainer}>
+        <TouchableOpacity style={styles.imagePicker} onPress={handlePickImage}>
+          {selectedImage ? (
             <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
-            <IconButton
-              icon="close-circle"
-              size={24}
-              style={styles.removeImageButton}
-              onPress={handleRemoveImage}
-            />
-          </View>
-        ) : (
-          <Button
-            mode="outlined"
-            onPress={handlePickImage}
-            loading={imageUploading}
-            disabled={imageUploading}
-            style={styles.imagePickerButton}
-            icon="camera"
-          >
-            {imageUploading ? 'Processing...' : 'Add Photo'}
-          </Button>
-        )}
+          ) : (
+            <Icon name="photo-camera" size={32} color={theme.colors.placeholder} />
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 8 }]}>
+        <Button
+            mode="contained"
+            onPress={handleSubmit}
+            loading={loading}
+            disabled={loading}
+            style={styles.button}
+            labelStyle={styles.buttonText}
+        >
+            Save
+        </Button>
       </View>
-
-      <Button
-        mode="contained"
-        onPress={handleSubmit}
-        loading={loading}
-        style={styles.submitButton}
-        labelStyle={styles.submitButtonText}
-        disabled={loading}
-      >
-        Post Item
-      </Button>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
+  container: { flex: 1 },
+  scrollContent: { padding: 20 },
+  label: { 
+    fontSize: 16, 
+    marginBottom: 8, 
+    opacity: 0.8,
+    fontWeight: '600',
+    marginTop: 12,
   },
-  content: {
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  input: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  buttonGrid: {
+  categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
-    marginBottom: 16,
+    gap: 8,
+    marginBottom: 20,
   },
-  categoryButton: {
-    marginBottom: 4,
-    marginRight: 4,
+  chip: {
+    backgroundColor: '#1F2937',
+    borderColor: '#374151',
+    borderWidth: 1,
   },
-  buttonContent: {
-    paddingHorizontal: 12,
-    // paddingVertical: 4,
-  },
-  submitButton: {
-    marginTop: 24,
-    paddingVertical: 8,
-  },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    color: '#f00',
-    fontSize: 12,
-    marginTop: -12,
-    marginBottom: 8,
-  },
-  imageSection: {
-    marginBottom: 16,
-  },
-  imageContainer: {
-    position: 'relative',
+  imagePicker: {
+    height: 150,
+    width: '100%',
+    backgroundColor: '#1F2937',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    overflow: 'hidden',
   },
   imagePreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
+      width: '100%',
+      height: '100%',
   },
-  removeImageButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
+  buttonContainer: {
+      padding: 16,
+      borderTopWidth: 1,
+      borderColor: '#1F2937',
   },
-  imagePickerButton: {
-    marginBottom: 8,
-  },
+  button: { borderRadius: 12, paddingVertical: 10 },
+  buttonText: { fontSize: 16, fontWeight: 'bold' },
 });
