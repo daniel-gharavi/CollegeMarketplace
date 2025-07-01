@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "HooMart",
-    "slug": "HooMart",
+    "slug": "hoomart",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,7 +12,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hoomart"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,11 +21,44 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "versionCode": 1
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK"
+      ],
+      "package": "com.hoomart",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "collegemarketplace"
+    "scheme": "collegemarketplace",
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#E57200",
+      "androidMode": "default",
+      "androidCollapsedTitle": "#{unread_notifications} new messages"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4cb7a91d-b3d4-4dd0-bb4f-c3aaa79aa161"
+      }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#E57200",
+          "googleServicesFile": "./google-services.json",
+          "defaultChannel": "default"
+        }
+      ]
+    ],
+    "owner": "zoziboi"
   }
 }
