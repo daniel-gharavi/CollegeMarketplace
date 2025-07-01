@@ -38,7 +38,7 @@
     },
     "scheme": "collegemarketplace",
     "notification": {
-      "icon": "./assets/notification-icon.png",
+      "icon": "./assets/icon.png",
       "color": "#E57200",
       "androidMode": "default",
       "androidCollapsedTitle": "#{unread_notifications} new messages"
@@ -52,7 +52,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/icon.png",
           "color": "#E57200",
           "googleServicesFile": "./google-services.json",
           "defaultChannel": "default"
