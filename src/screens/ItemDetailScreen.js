@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Title, Paragraph, Button, Card, Text, Divider, Avatar, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ContactSellerBottomSheet from '../components/ContactSellerBottomSheet';
+import { useUser } from '../../contexts/UserContext';
 
 export default function ItemDetailScreen({ route, navigation }) {
   const { item } = route.params || {};
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const [showContactSheet, setShowContactSheet] = useState(false);
+  const { user: currentUser, loading: userLoading } = useUser();
+
+  // Check if current user owns this listing
+  const isOwnListing = currentUser && item?.profiles?.id === currentUser.id;
 
   // Set the header title dynamically to the item's title
   React.useLayoutEffect(() => {
@@ -14,6 +21,14 @@ export default function ItemDetailScreen({ route, navigation }) {
       title: item?.title || 'Details',
     });
   }, [navigation, item]);
+
+  const handleContactSeller = () => {
+    setShowContactSheet(true);
+  };
+
+  const handleCloseContactSheet = () => {
+    setShowContactSheet(false);
+  };
 
   return (
     <View style={styles.container}>
@@ -56,15 +71,32 @@ export default function ItemDetailScreen({ route, navigation }) {
       </ScrollView>
     
       <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 8, backgroundColor: theme.colors.surface }]}>
-          <Button
-              mode="contained"
-              onPress={() => console.log('Message Seller')}
-              style={styles.button}
-              labelStyle={styles.buttonText}
-          >
-              Message Seller
-          </Button>
+          {userLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+          ) : isOwnListing ? (
+            <Text style={[styles.ownListingText, { color: theme.colors.primary }]}>
+              This is your listing
+            </Text>
+          ) : (
+            <Button
+                mode="contained"
+                onPress={handleContactSeller}
+                style={styles.button}
+                labelStyle={styles.buttonText}
+            >
+                Contact Seller
+            </Button>
+          )}
       </View>
+
+      <ContactSellerBottomSheet
+        visible={showContactSheet}
+        onClose={handleCloseContactSheet}
+        seller={item?.profiles}
+        item={item}
+      />
     </View>
   );
 }
@@ -100,4 +132,18 @@ const styles = StyleSheet.create({
   },
   button: { borderRadius: 8, paddingVertical: 8 },
   buttonText: { fontSize: 16, fontWeight: 'bold' },
+  loadingContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#999',
+  },
+  ownListingText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
 });
