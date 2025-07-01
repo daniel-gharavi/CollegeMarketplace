@@ -8,6 +8,7 @@ export const getMarketplaceItems = async () => {
       .select(`
         *,
         profiles!seller_id (
+          id,
           first_name,
           last_name,
           email,
@@ -33,6 +34,7 @@ export const searchMarketplaceItems = async (searchTerm) => {
       .select(`
         *,
         profiles!seller_id (
+          id,
           first_name,
           last_name,
           email,
@@ -59,6 +61,7 @@ export const getItemsByCategory = async (category) => {
       .select(`
         *,
         profiles!seller_id (
+          id,
           first_name,
           last_name,
           email,
@@ -169,6 +172,7 @@ export const getMarketplaceItem = async (id) => {
       .select(`
         *,
         profiles!seller_id (
+          id,
           first_name,
           last_name,
           email,
