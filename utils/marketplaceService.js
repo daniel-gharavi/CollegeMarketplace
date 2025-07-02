@@ -1,6 +1,5 @@
 import { supabase } from './supabase';
 
-// Get all available marketplace items
 export const getMarketplaceItems = async () => {
   try {
     const { data, error } = await supabase
@@ -26,7 +25,6 @@ export const getMarketplaceItems = async () => {
   }
 };
 
-// Search marketplace items
 export const searchMarketplaceItems = async (searchTerm) => {
   try {
     const { data, error } = await supabase
@@ -53,7 +51,6 @@ export const searchMarketplaceItems = async (searchTerm) => {
   }
 };
 
-// Get items by category
 export const getItemsByCategory = async (category) => {
   try {
     const { data, error } = await supabase
@@ -80,10 +77,13 @@ export const getItemsByCategory = async (category) => {
   }
 };
 
-// Create a new marketplace item
 export const createMarketplaceItem = async (itemData) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser();
+    if (authError) throw authError;
     if (!user) throw new Error('User not authenticated');
 
     const { data, error } = await supabase
@@ -91,8 +91,8 @@ export const createMarketplaceItem = async (itemData) => {
       .insert([
         {
           ...itemData,
-          seller_id: user.id,
-        }
+          seller_id: user.id,     
+        },
       ])
       .select()
       .single();
@@ -105,7 +105,6 @@ export const createMarketplaceItem = async (itemData) => {
   }
 };
 
-// Update a marketplace item
 export const updateMarketplaceItem = async (id, updates) => {
   try {
     const { data, error } = await supabase
@@ -126,15 +125,22 @@ export const updateMarketplaceItem = async (id, updates) => {
   }
 };
 
-// Delete a marketplace item (soft delete by setting is_available to false)
 export const deleteMarketplaceItem = async (id) => {
   try {
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error('User not authenticated');
+
+    console.log('Current user ID =', user.id);
+    console.log('Deleting item ID =', id);
+
     const { data, error } = await supabase
       .from('marketplace_items')
-      .update({ is_available: false })
-      .eq('id', id)
-      .select()
-      .single();
+      .delete()              
+      .eq('id', id);
 
     if (error) throw error;
     return { data, error: null };
@@ -144,10 +150,13 @@ export const deleteMarketplaceItem = async (id) => {
   }
 };
 
-// Get items by current user
 export const getUserItems = async () => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser();
+    if (authError) throw authError;
     if (!user) throw new Error('User not authenticated');
 
     const { data, error } = await supabase
@@ -164,7 +173,6 @@ export const getUserItems = async () => {
   }
 };
 
-// Get a single item by ID
 export const getMarketplaceItem = async (id) => {
   try {
     const { data, error } = await supabase
@@ -188,4 +196,4 @@ export const getMarketplaceItem = async (id) => {
     console.error('Error fetching marketplace item:', error);
     return { data: null, error };
   }
-}; 
+};
