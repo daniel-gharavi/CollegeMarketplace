@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { TextInput, Button, Text, useTheme } from 'react-native-paper';
 import { supabase } from '../../utils/supabase';
 
@@ -14,20 +14,40 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     setError('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    
+
     if (error) {
       setError(error.message);
-      setLoading(false);
     }
-    // On success, the onAuthStateChange listener in AppNavigator will handle navigation
+    setLoading(false);
+  };
+
+  // --- ADDED THIS FUNCTION ---
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert('Email Required', 'Please enter your email address to reset your password.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'collegemarketplace://reset-password', // Optional: deep link back to your app
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      Alert.alert('Check your email', `A password reset link has been sent to ${email}.`);
+    }
+    setLoading(false);
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1, backgroundColor: theme.colors.background }} 
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
       >
@@ -69,7 +89,12 @@ export default function LoginScreen({ navigation }) {
         </View>
 
         <View style={styles.footer}>
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+            {/* --- ADDED THIS LINK --- */}
+            <TouchableOpacity onPress={handleForgotPassword}>
+                <Text style={styles.link}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Signup')} style={{ marginTop: 24 }}>
                 <Text style={styles.link}>Don't have an account? <Text style={{fontWeight: 'bold'}}>Sign up</Text></Text>
             </TouchableOpacity>
         </View>
@@ -79,8 +104,8 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flexGrow: 1, 
+  container: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
   },
@@ -94,19 +119,19 @@ const styles = StyleSheet.create({
       color: '#FFFFFF',
       letterSpacing: 1,
   },
-  title: { 
-      fontSize: 18, 
+  title: {
+      fontSize: 18,
       color: '#9CA3AF',
       marginTop: 8,
   },
   form: {
       width: '100%',
   },
-  input: { 
+  input: {
       marginBottom: 16,
       backgroundColor: '#1A294B',
   },
-  button: { 
+  button: {
       marginTop: 8,
       paddingVertical: 8,
       borderRadius: 12,
@@ -119,12 +144,12 @@ const styles = StyleSheet.create({
       marginTop: 24,
       alignItems: 'center'
   },
-  link: { 
+  link: {
       color: '#9CA3AF',
   },
-  error: { 
-      color: '#EF4444', 
-      marginBottom: 12, 
-      textAlign: 'center' 
+  error: {
+      color: '#EF4444',
+      marginBottom: 12,
+      textAlign: 'center'
   },
 });
